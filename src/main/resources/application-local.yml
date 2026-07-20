@@ -1,0 +1,32 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  datasource:
+    url: ${APP_DB_URL:jdbc:sqlite:${APP_DB_PATH:data/banco.db}?foreign_keys=on}
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      connection-init-sql: PRAGMA foreign_keys=ON
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    defer-datasource-initialization: true
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.community.dialect.SQLiteDialect
+        format_sql: true
+
+  flyway:
+    enabled: false
+
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:db/seed/sqlite-data.sql
+      continue-on-error: false
+      encoding: UTF-8
+

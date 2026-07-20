@@ -1,0 +1,94 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_admin_password
+      APP_DB_NAME: ${DB_NAME:-controle_servico}
+      APP_DB_USER: ${DB_USER:-controle_app}
+    secrets:
+      - postgres_admin_password
+      - app_db_password
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./docker/postgres/healthcheck.sh:/scripts/healthcheck.sh:ro
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "/bin/sh", "/scripts/healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  db-credential-sync:
+    image: postgres:16-alpine
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_DB_USER: ${DB_USER:-controle_app}
+    secrets:
+      - postgres_admin_password
+      - app_db_password
+    volumes:
+      - ./docker/postgres/sync-password.sh:/scripts/sync-password.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/sync-password.sh"]
+    networks:
+      - backend
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-credential-sync:
+        condition: service_completed_successfully
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: configtree:/run/secrets/
+      SERVER_ADDRESS: 0.0.0.0
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-controle_servico}
+      DB_USER: ${DB_USER:-controle_app}
+      APP_USER_USERNAME: ${APP_USER_USERNAME:?Defina APP_USER_USERNAME}
+      APP_ADMIN_USERNAME: ${APP_ADMIN_USERNAME:?Defina APP_ADMIN_USERNAME}
+      APP_COOKIE_SECURE: ${APP_COOKIE_SECURE:-false}
+    secrets:
+      - source: app_db_password
+        target: spring.datasource.password
+      - source: app_user_password
+        target: app.security.user.password
+      - source: app_admin_password
+        target: app.security.admin.password
+    ports:
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-8080}:8080"
+    networks:
+      - frontend
+      - backend
+
+volumes:
+  pg_data:
+
+networks:
+  frontend:
+  backend:
+    internal: true
+
+secrets:
+  postgres_admin_password:
+    file: ${POSTGRES_ADMIN_PASSWORD_FILE:?Defina POSTGRES_ADMIN_PASSWORD_FILE}
+  app_db_password:
+    file: ${APP_DB_PASSWORD_FILE:?Defina APP_DB_PASSWORD_FILE}
+  app_user_password:
+    file: ${APP_USER_PASSWORD_FILE:?Defina APP_USER_PASSWORD_FILE}
+  app_admin_password:
+    file: ${APP_ADMIN_PASSWORD_FILE:?Defina APP_ADMIN_PASSWORD_FILE}

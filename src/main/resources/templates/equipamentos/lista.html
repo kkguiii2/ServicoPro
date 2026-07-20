@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      lang="pt-BR">
+<body>
+<div layout:fragment="content">
+
+    <div class="section-header">
+        <div>
+            <div class="section-title">Equipamentos</div>
+            <div class="section-subtitle">Gerenciar equipamentos por prestador</div>
+        </div>
+        <button type="button" class="btn btn--primary" data-modal-open="modalNovoEquip"
+                aria-haspopup="dialog" aria-controls="modalNovoEquip" aria-expanded="false">
+            <i class="ph-bold ph-plus"></i> Novo Equipamento
+        </button>
+    </div>
+
+    <!-- Filtro por prestador -->
+    <div style="margin-bottom:var(--space-4)">
+        <form th:action="@{/equipamentos}" method="get" style="display:flex;gap:var(--space-3);align-items:center">
+            <select name="prestadorId" class="form-control" style="max-width:220px" onchange="this.form.submit()">
+                <option value="">Todos os prestadores</option>
+                <option th:each="p : ${prestadores}"
+                        th:value="${p.id}"
+                        th:text="${p.nome}"
+                        th:selected="${filtPrestadorId == p.id}">BRASILINE</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="data-table-card">
+        <div class="data-table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Modelo</th>
+                        <th>Nº Série</th>
+                        <th>Prestador</th>
+                        <th>Status</th>
+                        <th style="text-align:center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="e : ${equipamentos}">
+                        <td th:text="${e.nome}">Impressora HP</td>
+                        <td th:text="${e.modelo ?: '—'}" style="color:var(--color-text-muted);font-size:var(--font-size-xs)"></td>
+                        <td th:text="${e.numeroSerie ?: '—'}" style="font-family:var(--font-mono);font-size:var(--font-size-xs)"></td>
+                        <td>
+                            <span th:text="${e.prestador?.nome ?: '—'}"
+                                  style="font-size:var(--font-size-xs);font-weight:600"></span>
+                        </td>
+                        <td>
+                            <span th:if="${e.ativo}" class="badge badge--concluido">Ativo</span>
+                            <span th:unless="${e.ativo}" class="badge badge--cancelado">Inativo</span>
+                        </td>
+                        <td style="text-align:center">
+                            <form th:action="@{/equipamentos/{id}/excluir(id=${e.id})}" method="post" style="display:inline"
+                                  onsubmit="return confirm('Excluir equipamento?')">
+                                <button type="submit" class="btn btn--ghost btn--icon btn--sm"
+                                        style="color:var(--color-danger)"><i class="ph-bold ph-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(equipamentos)}">
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state__icon">🖨</div>
+                                <div class="empty-state__title">Nenhum equipamento</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Novo Equipamento -->
+    <div id="modalNovoEquip" class="modal-backdrop" data-modal hidden
+         role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modalNovoEquipTitulo">
+        <div class="modal-panel modal-panel--wide" tabindex="-1">
+            <div class="modal-panel__header">
+                <div class="modal-panel__heading">
+                    <div class="modal-panel__icon" aria-hidden="true">
+                        <i class="ph-duotone ph-printer"></i>
+                    </div>
+                    <div>
+                        <div class="modal-panel__title" id="modalNovoEquipTitulo">Novo Equipamento</div>
+                        <div class="modal-panel__subtitle">Vincule o equipamento ao prestador responsável e registre sua identificação.</div>
+                    </div>
+                </div>
+                <button type="button" class="modal-close" data-modal-close aria-label="Fechar modal">
+                    <i class="ph ph-x" aria-hidden="true"></i>
+                </button>
+            </div>
+            <form th:action="@{/equipamentos/salvar}" method="post" th:object="${novoEquipamento}">
+                <div class="form-group" style="margin-bottom:var(--space-4)">
+                    <label class="form-label" for="prestadorId">Prestador</label>
+                    <select th:field="*{prestadorId}" class="form-control">
+                        <option value="">Selecione...</option>
+                        <option th:each="p : ${prestadores}" th:value="${p.id}" th:text="${p.nome}">BRASILINE</option>
+                    </select>
+                    <span class="form-error" th:if="${#fields.hasErrors('prestadorId')}" th:errors="*{prestadorId}"></span>
+                </div>
+                <div class="form-group" style="margin-bottom:var(--space-4)">
+                    <label class="form-label" for="nome">Nome <span class="required">*</span></label>
+                    <input type="text" th:field="*{nome}" class="form-control" placeholder="Ex: Impressora HP Recepção"/>
+                    <span class="form-error" th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}"></span>
+                </div>
+                <div class="form-row form-row--2" style="margin-bottom:0">
+                    <div class="form-group">
+                        <label class="form-label" for="modelo">Modelo</label>
+                        <input type="text" th:field="*{modelo}" class="form-control" placeholder="Ex: HP LaserJet Pro"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="numeroSerie">Nº de Série</label>
+                        <input type="text" th:field="*{numeroSerie}" class="form-control" placeholder="SN-XXXX"/>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn--ghost" data-modal-close>Cancelar</button>
+                    <button type="submit" class="btn btn--primary"><i class="ph-bold ph-floppy-disk"></i> Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

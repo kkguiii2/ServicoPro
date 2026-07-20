@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      lang="pt-BR">
+<body>
+<div layout:fragment="content">
+
+    <div class="breadcrumb">
+        <a th:href="@{/chamados}">Chamados</a>
+        <span class="breadcrumb-sep">›</span>
+        <span th:text="${editando ? 'Editar #' + chamadoId : 'Novo Chamado'}">Novo Chamado</span>
+    </div>
+
+    <form th:action="${editando} ? @{/chamados/{id}/editar(id=${chamadoId})} : @{/chamados/novo}"
+          method="post" th:object="${form}" id="chamadoForm">
+
+        <!-- Seção 1: Identificação -->
+        <div class="form-section">
+            <div class="form-section__title">📋 Identificação</div>
+            <div class="form-row form-row--2">
+                <div class="form-group">
+                    <label class="form-label" for="numeroCh">Número CH</label>
+                    <input type="text" id="numeroCh" th:field="*{numeroCh}"
+                           class="form-control" placeholder="Ex: CH-2026-001"/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="prestadorId">Prestador <span class="required">*</span></label>
+                    <select id="prestadorId" th:field="*{prestadorId}"
+                            class="form-control"
+                            th:classappend="${#fields.hasErrors('prestadorId')} ? ' is-invalid'"
+                            onchange="carregarEquipamentos(this.value)">
+                        <option value="">Selecione...</option>
+                        <option th:each="p : ${prestadores}"
+                                th:value="${p.id}"
+                                th:text="${p.nome}">BRASILINE</option>
+                    </select>
+                    <span class="form-error" th:if="${#fields.hasErrors('prestadorId')}"
+                          th:errors="*{prestadorId}"></span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="equipamentoId">Equipamento</label>
+                    <select id="equipamentoId" th:field="*{equipamentoId}" class="form-control">
+                        <option value="">Selecione o prestador primeiro</option>
+                        <option th:each="e : ${equipamentos}"
+                                th:value="${e.id}"
+                                th:text="${e.nome + (e.modelo != null ? ' — ' + e.modelo : '')}">Impressora</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row form-row--2">
+                <div class="form-group">
+                    <label class="form-label" for="setorId">Setor/Solicitante <span class="required">*</span></label>
+                    <select id="setorId" th:field="*{setorId}"
+                            class="form-control"
+                            th:classappend="${#fields.hasErrors('setorId')} ? ' is-invalid'">
+                        <option value="">Selecione...</option>
+                        <option th:each="s : ${setores}"
+                                th:value="${s.id}"
+                                th:text="${s.nome}">TI</option>
+                    </select>
+                    <span class="form-error" th:if="${#fields.hasErrors('setorId')}" th:errors="*{setorId}"></span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="motivoId">Motivo <span class="required">*</span></label>
+                    <select id="motivoId" th:field="*{motivoId}"
+                            class="form-control"
+                            th:classappend="${#fields.hasErrors('motivoId')} ? ' is-invalid'">
+                        <option value="">Selecione...</option>
+                        <option th:each="m : ${motivos}"
+                                th:value="${m.id}"
+                                th:text="${m.descricao}">Papel engatado</option>
+                    </select>
+                    <span class="form-error" th:if="${#fields.hasErrors('motivoId')}" th:errors="*{motivoId}"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção 2: Atendimento -->
+        <div class="form-section">
+            <div class="form-section__title">🛠 Atendimento</div>
+            <div class="form-group">
+                <label class="form-label" for="descricaoAtendimento">Descrição do Atendimento <span class="required">*</span></label>
+                <textarea id="descricaoAtendimento" th:field="*{descricaoAtendimento}"
+                          class="form-control"
+                          th:classappend="${#fields.hasErrors('descricaoAtendimento')} ? ' is-invalid'"
+                          rows="4" placeholder="Descreva detalhadamente o atendimento realizado..."></textarea>
+                <span class="form-error" th:if="${#fields.hasErrors('descricaoAtendimento')}" th:errors="*{descricaoAtendimento}"></span>
+            </div>
+            <div class="form-row form-row--3">
+                <div class="form-group">
+                    <label class="form-label" for="dataAbertura">Data/Hora Abertura <span class="required">*</span></label>
+                    <input type="text" id="dataAbertura" th:field="*{dataAbertura}"
+                           class="form-control"
+                           th:classappend="${#fields.hasErrors('dataAbertura')} ? ' is-invalid'"/>
+                    <span class="form-error" th:if="${#fields.hasErrors('dataAbertura')}" th:errors="*{dataAbertura}"></span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="observacao">Observação</label>
+                    <textarea id="observacao" th:field="*{observacao}"
+                              class="form-control" rows="2" placeholder="Observações adicionais..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção 3: Avaliação -->
+        <div class="form-section">
+            <div class="form-section__title">⭐ Avaliação do Conceito</div>
+            <div class="radio-group">
+                <label class="radio-option" th:each="c : ${conceitoList}">
+                    <input type="radio" th:field="*{conceito}" th:value="${c.name()}"/>
+                    <span th:class="'radio-option__label conceito conceito--' + ${#strings.toLowerCase(#strings.replace(c.name(),'_',''))}"
+                          th:text="${c.estrelas + ' ' + c.descricao}">⭐ Bom</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Ações -->
+        <div style="display:flex;gap:var(--space-3);justify-content:flex-end;margin-top:var(--space-2)">
+            <a th:href="@{/chamados}" class="btn btn--ghost">
+                <i class="ph-bold ph-x"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn--primary btn--lg">
+                <i class="ph-bold ph-floppy-disk"></i>
+                <span th:text="${editando ? 'Salvar Alterações' : 'Criar Chamado'}">Salvar</span>
+            </button>
+        </div>
+    </form>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script th:inline="javascript">
+    const equipamentosIniciais = /*[[${equipamentos}]]*/ [];
+    const prestadorSelecionado = /*[[${form.prestadorId}]]*/ null;
+    const equipamentoSelecionado = /*[[${form.equipamentoId}]]*/ null;
+
+    function carregarEquipamentos(prestadorId) {
+        const sel = document.getElementById('equipamentoId');
+        sel.innerHTML = '<option value="">Carregando...</option>';
+        if (!prestadorId) {
+            sel.innerHTML = '<option value="">Selecione o prestador primeiro</option>';
+            return;
+        }
+        const incluirId = prestadorId == prestadorSelecionado ? equipamentoSelecionado : null;
+        const url = '/api/equipamentos?prestadorId=' + encodeURIComponent(prestadorId)
+            + (incluirId ? '&incluirId=' + encodeURIComponent(incluirId) : '');
+        fetch(url)
+            .then(r => {
+                if (!r.ok) throw new Error('Falha ao carregar equipamentos');
+                return r.json();
+            })
+            .then(equips => {
+                sel.innerHTML = '<option value="">Nenhum</option>';
+                equips.forEach(e => {
+                    const opt = document.createElement('option');
+                    opt.value = e.id;
+                    opt.textContent = e.nome;
+                    if (e.id == equipamentoSelecionado) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            })
+            .catch(() => { sel.innerHTML = '<option value="">Erro ao carregar</option>'; });
+    }
+
+    // Configuração do Flatpickr para padrão brasileiro 24h
+    const fpConfig = {
+        enableTime: true,
+        dateFormat: "Y-m-d\\TH:i",
+        altInput: true,
+        altFormat: "d/m/Y H:i",
+        time_24hr: true,
+        locale: "pt",
+        allowInput: true
+    };
+
+    flatpickr("#dataAbertura", fpConfig);
+
+    // Inicializar
+    if (prestadorSelecionado) carregarEquipamentos(prestadorSelecionado);
+</script>
+</th:block>
+</body>
+</html>

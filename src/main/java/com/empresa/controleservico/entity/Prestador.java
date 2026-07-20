@@ -1,0 +1,41 @@
+package com.empresa.controleservico.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
+
+/**
+ * Empresa responsável pelos equipamentos e atendimentos registrados no sistema.
+ */
+@Entity
+@Table(name = "prestadores")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Prestador {
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String nome;
+
+    @Column(columnDefinition = "TEXT")
+    private String descricao;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean ativo = true;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+}

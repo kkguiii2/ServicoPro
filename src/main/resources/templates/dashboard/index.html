@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      lang="pt-BR">
+<body>
+<div layout:fragment="content">
+
+    <form th:action="@{/dashboard}" method="get" class="filter-bar" style="margin-bottom:var(--space-5)">
+        <div style="display:flex;gap:var(--space-3);align-items:end">
+            <div class="form-group" style="min-width:260px">
+                <label class="form-label" for="prestadorId">Prestador</label>
+                <select id="prestadorId" name="prestadorId" class="form-control">
+                    <option value="">Todos os prestadores</option>
+                    <option th:each="p : ${prestadores}" th:value="${p.id}" th:text="${p.nome}"
+                            th:selected="${prestadorFiltro == p.id}"></option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn--primary">Aplicar filtro</button>
+        </div>
+    </form>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid stagger" th:if="${kpis}">
+        <div class="kpi-card" style="--kpi-color: var(--color-info)">
+            <div class="kpi-card__icon">📋</div>
+            <div class="kpi-card__label">Chamados no Mês</div>
+            <div class="kpi-card__value" th:text="${kpis.totalChamadosMes}">0</div>
+            <div class="kpi-card__sub">mês atual</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color: var(--color-warning)">
+            <div class="kpi-card__icon">🔓</div>
+            <div class="kpi-card__label">Em Aberto</div>
+            <div class="kpi-card__value" th:text="${kpis.chamadosAbertos}">0</div>
+            <div class="kpi-card__sub" th:text="${kpis.chamadosEmAndamento} + ' em andamento'">aguardando</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color: var(--color-success)">
+            <div class="kpi-card__icon">✅</div>
+            <div class="kpi-card__label">Concluídos</div>
+            <div class="kpi-card__value" th:text="${kpis.chamadosConcluidos}">0</div>
+            <div class="kpi-card__sub">total histórico</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color: var(--color-danger)">
+            <div class="kpi-card__icon">🔁</div>
+            <div class="kpi-card__label">Taxa Reincidência</div>
+            <div class="kpi-card__value" th:text="${kpis.taxaReincidencia} + '%'">0%</div>
+            <div class="kpi-card__sub">últimos 12 meses</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color: #A371F7">
+            <div class="kpi-card__icon">⏱</div>
+            <div class="kpi-card__label">Tempo Médio</div>
+            <div class="kpi-card__value" th:text="${kpis.tempoMedioAtendimentoHoras} + 'h'">0h</div>
+            <div class="kpi-card__sub">por atendimento</div>
+        </div>
+    </div>
+
+    <!-- Gráficos — linha 1 -->
+    <div class="charts-grid stagger">
+
+        <!-- Chamados por Prestador -->
+        <div class="chart-card chart-card--third">
+            <div class="chart-card__title">Chamados por Prestador</div>
+            <div class="chart-wrap">
+                <canvas id="chartPrestador"></canvas>
+            </div>
+        </div>
+
+        <!-- Distribuição por Status -->
+        <div class="chart-card chart-card--third">
+            <div class="chart-card__title">Distribuição por Status</div>
+            <div class="chart-wrap">
+                <canvas id="chartStatus"></canvas>
+            </div>
+        </div>
+
+        <!-- Evolução Mensal -->
+        <div class="chart-card chart-card--third" style="grid-column: span 6;">
+            <div class="chart-card__title">Evolução Mensal</div>
+            <div class="chart-wrap">
+                <canvas id="chartEvolucao"></canvas>
+            </div>
+        </div>
+
+        <!-- Top 5 Motivos -->
+        <div class="chart-card chart-card--half">
+            <div class="chart-card__title">Top 5 Motivos</div>
+            <div class="chart-wrap">
+                <canvas id="chartMotivos"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Últimos Chamados -->
+    <div class="data-table-card">
+        <div class="data-table-card__header">
+            <div class="data-table-card__title">Últimos Chamados</div>
+            <a th:href="@{/chamados}" class="btn btn--ghost btn--sm">
+                <i class="ph-bold ph-arrow-right"></i> Ver todos
+            </a>
+        </div>
+        <div class="data-table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nº CH</th>
+                        <th>Prestador</th>
+                        <th>Setor</th>
+                        <th>Motivo</th>
+                        <th>Abertura</th>
+                        <th>Status</th>
+                        <th>Conceito</th>
+                        <th>Tempo</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="c : ${kpis.ultimosChamados}" th:if="${kpis.ultimosChamados != null}">
+                        <td>
+                            <span th:text="${c.numeroCh != null ? c.numeroCh : '#' + c.id}">#1</span>
+                            <span th:if="${c.reincidente}" class="badge badge--reincidente" data-tooltip="Reincidente">2+</span>
+                        </td>
+                        <td th:text="${c.prestadorNome}">BRASILINE</td>
+                        <td th:text="${c.setorNome}">TI</td>
+                        <td th:text="${c.motivoDescricao}">Rede</td>
+                        <td th:text="${#temporals.format(c.dataAbertura, 'dd/MM/yyyy')}">01/01/2026</td>
+                        <td>
+                            <span th:class="'badge badge--' + ${#strings.toLowerCase(#strings.replace(c.status.name(), '_', ''))}"
+                                  th:text="${c.status.descricao}">Aberto</span>
+                        </td>
+                        <td>
+                            <span th:if="${c.conceito != null}"
+                                  th:class="'conceito conceito--' + ${#strings.toLowerCase(#strings.replace(c.conceito.name(), '_', ''))}"
+                                  th:text="${c.conceito.descricao}">Bom</span>
+                            <span th:unless="${c.conceito != null}" style="color:var(--color-text-muted)">—</span>
+                        </td>
+                        <td th:text="${c.tempoFormatado}" style="font-family:var(--font-mono);font-size:var(--font-size-xs)">2h 30min</td>
+                        <td>
+                            <a th:href="@{/chamados/{id}(id=${c.id})}" class="btn btn--ghost btn--sm">
+                                <i class="ph-bold ph-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${kpis.ultimosChamados == null or #lists.isEmpty(kpis.ultimosChamados)}">
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <div class="empty-state__icon">📋</div>
+                                <div class="empty-state__title">Nenhum chamado registrado</div>
+                                <div class="empty-state__desc">Crie o primeiro chamado para começar</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script th:inline="javascript">
+    // Dados do servidor
+    const prestadoresNomes    = /*[[${kpis.prestadoresNomes}]]*/ [];
+    const chamadosPorPrestador = /*[[${kpis.chamadosPorPrestador}]]*/ [];
+    const statusLabels         = /*[[${kpis.chamadosPorStatus.keySet()}]]*/ [];
+    const statusValues         = /*[[${kpis.chamadosPorStatus.values()}]]*/ [];
+    const mesesLabels          = /*[[${kpis.mesesLabels}]]*/ [];
+    const chamadosPorMes       = /*[[${kpis.chamadosPorMes}]]*/ [];
+    const motivosLabels        = /*[[${kpis.top5MotivosLabels}]]*/ [];
+    const motivosCount         = /*[[${kpis.top5MotivosCount}]]*/ [];
+
+    // Tema global Chart.js
+    Chart.defaults.color          = '#8B949E';
+    Chart.defaults.borderColor    = '#30363D';
+    Chart.defaults.font.family    = 'DM Sans, sans-serif';
+    Chart.defaults.font.size      = 11;
+    Chart.defaults.plugins.legend.position = 'bottom';
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.padding = 16;
+    Chart.defaults.plugins.tooltip.backgroundColor = '#21262D';
+    Chart.defaults.plugins.tooltip.borderColor     = '#30363D';
+    Chart.defaults.plugins.tooltip.borderWidth     = 1;
+    Chart.defaults.plugins.tooltip.titleColor      = '#E6EDF3';
+    Chart.defaults.plugins.tooltip.bodyColor       = '#8B949E';
+    Chart.defaults.plugins.tooltip.padding         = 10;
+    Chart.defaults.plugins.tooltip.cornerRadius    = 10;
+
+    const PRESTADOR_COLORS = ['#F78166', '#2F81F7', '#3FB950', '#D29922', '#A371F7'];
+
+    // Gráfico 1: Barras Prestadores
+    new Chart(document.getElementById('chartPrestador'), {
+        type: 'bar',
+        data: {
+            labels: prestadoresNomes,
+            datasets: [{
+                label: 'Chamados',
+                data: chamadosPorPrestador,
+                backgroundColor: PRESTADOR_COLORS,
+                borderRadius: 6,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+
+    // Gráfico 2: Pizza Status
+    const statusColors = {
+        'ABERTO':       '#58A6FF',
+        'EM_ANDAMENTO': '#D29922',
+        'CONCLUIDO':    '#3FB950',
+        'CANCELADO':    '#F85149'
+    };
+    new Chart(document.getElementById('chartStatus'), {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels.map(s => s.replace('_', ' ')),
+            datasets: [{
+                data: statusValues,
+                backgroundColor: statusLabels.map(s => statusColors[s] || '#8B949E'),
+                borderColor: '#161B22',
+                borderWidth: 2,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    // Gráfico 3: Linha evolução
+    const ctx3 = document.getElementById('chartEvolucao').getContext('2d');
+    const grad = ctx3.createLinearGradient(0, 0, 0, 200);
+    grad.addColorStop(0, 'rgba(47, 129, 247, 0.35)');
+    grad.addColorStop(1, 'rgba(47, 129, 247, 0.00)');
+    new Chart(ctx3, {
+        type: 'line',
+        data: {
+            labels: mesesLabels,
+            datasets: [{
+                label: 'Chamados',
+                data: chamadosPorMes,
+                borderColor: '#2F81F7',
+                backgroundColor: grad,
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#2F81F7',
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+
+    // Gráfico 4: Barras horizontais motivos
+    new Chart(document.getElementById('chartMotivos'), {
+        type: 'bar',
+        data: {
+            labels: motivosLabels,
+            datasets: [{
+                label: 'Ocorrências',
+                data: motivosCount,
+                backgroundColor: '#A371F7',
+                borderRadius: 4,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+</script>
+</th:block>
+</body>
+</html>

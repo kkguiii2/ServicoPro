@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      lang="pt-BR">
+<body>
+<div layout:fragment="content">
+
+    <div class="section-header">
+        <div>
+            <div class="section-title">Configurações</div>
+            <div class="section-subtitle">Gerenciar setores e motivos do sistema</div>
+        </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5)">
+
+        <!-- Setores -->
+        <div class="detail-card">
+            <div class="detail-card__title">🏢 Setores / Solicitantes</div>
+
+            <form th:action="@{/configuracoes/setores/salvar}" method="post"
+                  th:object="${novoSetor}" style="margin-bottom:var(--space-4)">
+                <div style="display:flex;gap:var(--space-3)">
+                    <input type="text" th:field="*{nome}" class="form-control" placeholder="Nome do setor..." required/>
+                    <button type="submit" class="btn btn--primary btn--sm" style="flex-shrink:0">
+                        <i class="ph-bold ph-plus"></i> Adicionar
+                    </button>
+                </div>
+                <span class="form-error" th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}"></span>
+            </form>
+
+            <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+                <div th:each="s : ${setores}"
+                     style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4);background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:var(--radius-md)">
+                    <div>
+                        <span th:text="${s.nome}" style="font-weight:500"></span>
+                        <span th:unless="${s.ativo}" class="badge badge--cancelado" style="margin-left:var(--space-2);font-size:var(--font-size-xs)">Inativo</span>
+                    </div>
+                    <form th:action="@{/configuracoes/setores/{id}/excluir(id=${s.id})}" method="post"
+                          onsubmit="return confirm('Excluir setor?')">
+                        <button type="submit" class="btn btn--ghost btn--icon btn--sm"
+                                style="color:var(--color-danger)"><i class="ph-bold ph-trash"></i></button>
+                    </form>
+                </div>
+                <div th:if="${#lists.isEmpty(setores)}" style="color:var(--color-text-muted);font-size:var(--font-size-sm);text-align:center;padding:var(--space-5)">
+                    Nenhum setor cadastrado
+                </div>
+            </div>
+        </div>
+
+        <!-- Motivos -->
+        <div class="detail-card">
+            <div class="detail-card__title">🔧 Motivos de Chamado</div>
+
+            <form th:action="@{/configuracoes/motivos/salvar}" method="post"
+                  th:object="${novoMotivo}" style="margin-bottom:var(--space-4)">
+                <div style="display:flex;gap:var(--space-3)">
+                    <input type="text" th:field="*{descricao}" class="form-control" placeholder="Descrição do motivo..." required/>
+                    <button type="submit" class="btn btn--primary btn--sm" style="flex-shrink:0">
+                        <i class="ph-bold ph-plus"></i> Adicionar
+                    </button>
+                </div>
+                <span class="form-error" th:if="${#fields.hasErrors('descricao')}" th:errors="*{descricao}"></span>
+            </form>
+
+            <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+                <div th:each="m : ${motivos}"
+                     style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4);background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:var(--radius-md)">
+                    <span th:text="${m.descricao}" style="font-weight:500"></span>
+                    <form th:action="@{/configuracoes/motivos/{id}/excluir(id=${m.id})}" method="post"
+                          onsubmit="return confirm('Excluir motivo?')">
+                        <button type="submit" class="btn btn--ghost btn--icon btn--sm"
+                                style="color:var(--color-danger)"><i class="ph-bold ph-trash"></i></button>
+                    </form>
+                </div>
+                <div th:if="${#lists.isEmpty(motivos)}" style="color:var(--color-text-muted);font-size:var(--font-size-sm);text-align:center;padding:var(--space-5)">
+                    Nenhum motivo cadastrado
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+</body>
+</html>

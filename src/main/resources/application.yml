@@ -1,0 +1,65 @@
+spring:
+  profiles:
+    default: local
+
+  thymeleaf:
+    cache: false
+    encoding: UTF-8
+    mode: HTML
+    prefix: classpath:/templates/
+    suffix: .html
+
+  mvc:
+    format:
+      date: dd/MM/yyyy
+      date-time: dd/MM/yyyy HH:mm
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    date-format: dd/MM/yyyy HH:mm
+
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: 8080
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+      force-request: true
+      force-response: true
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        secure: ${APP_COOKIE_SECURE:false}
+        same-site: lax
+
+app:
+  security:
+    user:
+      username: ${APP_USER_USERNAME}
+      password: ${APP_USER_PASSWORD}
+    admin:
+      username: ${APP_ADMIN_USERNAME}
+      password: ${APP_ADMIN_PASSWORD}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    com.empresa.controleservico: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: WARN

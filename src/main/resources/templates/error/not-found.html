@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${pageTitle}">Erro 404</title>
+    <link th:href="@{/css/tokens.css}" rel="stylesheet"/>
+    <link th:href="@{/css/components.css}" rel="stylesheet"/>
+</head>
+<body style="display:grid;min-height:100vh;place-items:center;background:var(--color-bg-primary);color:var(--color-text-primary)">
+<main class="detail-card" style="max-width:520px;text-align:center">
+    <h1 th:text="${errorTitle}">Recurso não encontrado</h1>
+    <p th:text="${errorMessage}" style="color:var(--color-text-muted)">O recurso solicitado não existe.</p>
+    <a th:href="@{/dashboard}" class="btn btn--primary">Voltar ao início</a>
+</main>
+</body>
+</html>

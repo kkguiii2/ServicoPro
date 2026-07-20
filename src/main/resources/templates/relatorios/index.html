@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      lang="pt-BR">
+<body>
+<div layout:fragment="content">
+
+    <div class="section-header">
+        <div>
+            <div class="section-title">Relatórios</div>
+            <div class="section-subtitle">Exportar dados do sistema em Excel ou PDF</div>
+        </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5)">
+
+        <!-- Relatório Geral -->
+        <div class="detail-card">
+            <div class="detail-card__title">📊 Relatório Geral de Chamados</div>
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-5)">
+                Gera o relatório no mesmo formato da planilha original, com uma aba por prestador.
+            </p>
+            <form action="/relatorios/excel" method="get" id="formGeral">
+                <div class="form-group" style="margin-bottom:var(--space-4)">
+                    <label class="form-label">Prestadores</label>
+                    <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+                        <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);cursor:pointer">
+                            <input type="checkbox" id="allPrestadores" name="_allPrestadores" checked/> Todos os prestadores
+                        </label>
+                        <div style="padding-left:var(--space-4);display:flex;flex-direction:column;gap:var(--space-1)" id="prestadoresCheckboxes">
+                            <label th:each="p : ${prestadores}"
+                                   style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);cursor:pointer">
+                                <input type="checkbox" name="prestadorIds" th:value="${p.id}" checked/>
+                                <span th:text="${p.nome}">BRASILINE</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row form-row--2" style="margin-bottom:var(--space-4)">
+                    <div class="form-group">
+                        <label class="form-label">De</label>
+                        <input type="date" name="dataInicio" class="form-control" required
+                               th:value="${#dates.format(#dates.createNow(),'yyyy-MM-01')}"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Até</label>
+                        <input type="date" name="dataFim" class="form-control" required
+                               th:value="${#dates.format(#dates.createNow(),'yyyy-MM-dd')}"/>
+                    </div>
+                </div>
+                <div style="display:flex;gap:var(--space-3)">
+                    <button type="submit" formaction="/relatorios/excel" class="btn btn--primary">
+                        <i class="ph-duotone ph-file-xls"></i> Exportar Excel
+                    </button>
+                    <button type="submit" formaction="/relatorios/pdf" class="btn btn--ghost">
+                        <i class="ph-duotone ph-file-pdf"></i> Exportar PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Relatório por Período -->
+        <div class="detail-card">
+            <div class="detail-card__title">📅 Relatório por Período</div>
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-5)">
+                Selecione um período específico e os prestadores para gerar o relatório.
+            </p>
+            <form action="/relatorios/excel" method="get">
+                <div class="form-group" style="margin-bottom:var(--space-4)">
+                    <label class="form-label">Prestador</label>
+                    <select name="prestadorIds" class="form-control">
+                        <option value="">Todos</option>
+                        <option th:each="p : ${prestadores}"
+                                th:value="${p.id}"
+                                th:text="${p.nome}">BRASILINE</option>
+                    </select>
+                </div>
+                <div class="form-row form-row--2" style="margin-bottom:var(--space-4)">
+                    <div class="form-group">
+                        <label class="form-label">De</label>
+                        <input type="date" name="dataInicio" class="form-control" required
+                               th:value="${#dates.format(#dates.createNow(),'yyyy-01-01')}"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Até</label>
+                        <input type="date" name="dataFim" class="form-control" required
+                               th:value="${#dates.format(#dates.createNow(),'yyyy-MM-dd')}"/>
+                    </div>
+                </div>
+                <div style="display:flex;gap:var(--space-3)">
+                    <button type="submit" formaction="/relatorios/excel" class="btn btn--primary">
+                        <i class="ph-duotone ph-file-xls"></i> Excel
+                    </button>
+                    <button type="submit" formaction="/relatorios/pdf" class="btn btn--ghost">
+                        <i class="ph-duotone ph-file-pdf"></i> PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const allCb = document.getElementById('allPrestadores');
+    const childCbs = document.querySelectorAll('#prestadoresCheckboxes input[type=checkbox]');
+    
+    if (allCb && childCbs.length > 0) {
+        // Quando clica em "Todos"
+        allCb.addEventListener('change', (e) => {
+            childCbs.forEach(c => c.checked = e.target.checked);
+        });
+
+        // Quando clica em uma individual
+        childCbs.forEach(cb => {
+            cb.addEventListener('change', () => {
+                const allChecked = Array.from(childCbs).every(c => c.checked);
+                const noneChecked = Array.from(childCbs).every(c => !c.checked);
+                
+                allCb.checked = allChecked;
+                allCb.indeterminate = !allChecked && !noneChecked;
+            });
+        });
+    }
+});
+</script>
+</th:block>
+</body>
+</html>

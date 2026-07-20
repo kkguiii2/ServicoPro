@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Erro - Gestão TI</title>
+    <link rel="stylesheet" th:href="@{/css/tokens.css}">
+    <link rel="stylesheet" th:href="@{/css/layout.css}">
+    <style>
+        body {
+            background-color: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+        }
+        .error-container {
+            max-width: 500px;
+            padding: var(--space-8);
+            background-color: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: var(--color-danger);
+            margin-bottom: var(--space-4);
+        }
+        p {
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-6);
+        }
+        .btn {
+            display: inline-block;
+            padding: var(--space-2) var(--space-4);
+            background-color: var(--color-accent);
+            color: var(--color-text-primary);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            filter: brightness(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h1 th:text="${errorTitle}">Ops, algo deu errado!</h1>
+        <p th:text="${errorMessage}">Ocorreu um erro interno no servidor.</p>
+        <a th:href="@{/dashboard}" class="btn">Voltar ao Início</a>
+    </div>
+</body>
+</html>

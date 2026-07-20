@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/base}"
+      lang="pt-BR">
+<body>
+<div layout:fragment="content">
+
+    <!-- Filtros -->
+    <form th:action="@{/chamados}" method="get" class="filter-bar" id="filterForm">
+        <div class="filter-bar__grid">
+            <div class="form-group">
+                <label class="form-label">Nº CH</label>
+                <input type="text" name="numeroCh" class="form-control form-control--sm"
+                       th:value="${filtNumeroCh}" placeholder="Buscar..."/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Prestador</label>
+                <select name="prestadorId" class="form-control form-control--sm">
+                    <option value="">Todos</option>
+                    <option th:each="p : ${prestadores}"
+                            th:value="${p.id}"
+                            th:text="${p.nome}"
+                            th:selected="${filtPrestadorId == p.id}">BRASILINE</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-control form-control--sm">
+                    <option value="">Todos</option>
+                    <option th:each="s : ${statusList}"
+                            th:value="${s.name()}"
+                            th:text="${s.descricao}"
+                            th:selected="${filtStatus?.name() == s.name()}">Aberto</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Setor</label>
+                <select name="setorId" class="form-control form-control--sm">
+                    <option value="">Todos</option>
+                    <option th:each="s : ${setores}"
+                            th:value="${s.id}"
+                            th:text="${s.nome}"
+                            th:selected="${filtSetorId == s.id}">TI</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Conceito</label>
+                <select name="conceito" class="form-control form-control--sm">
+                    <option value="">Todos</option>
+                    <option th:each="c : ${conceitoList}"
+                            th:value="${c.name()}"
+                            th:text="${c.descricao}"
+                            th:selected="${filtConceito?.name() == c.name()}">Bom</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Data De</label>
+                <input type="date" name="dataInicio" class="form-control form-control--sm"
+                       th:value="${filtDataInicio != null ? #temporals.format(filtDataInicio,'yyyy-MM-dd') : ''}"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Data Até</label>
+                <input type="date" name="dataFim" class="form-control form-control--sm"
+                       th:value="${filtDataFim != null ? #temporals.format(filtDataFim,'yyyy-MM-dd') : ''}"/>
+            </div>
+            <div class="form-group" style="align-self:end">
+                <div class="filter-bar__actions">
+                    <button type="submit" class="btn btn--primary btn--sm">
+                        <i class="ph-bold ph-magnifying-glass"></i> Filtrar
+                    </button>
+                    <a th:href="@{/chamados}" class="btn btn--ghost btn--sm">Limpar</a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Cabeçalho + Ações -->
+    <div class="data-table-card">
+        <div class="data-table-card__header">
+            <div>
+                <div class="data-table-card__title">Chamados</div>
+                <div style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-top:2px"
+                     th:text="${chamados.totalElements} + ' registros encontrados'">0 registros</div>
+            </div>
+            <div class="data-table-card__actions">
+                <!-- Exportar Excel -->
+                <a th:href="@{/relatorios/excel(dataInicio=${#dates.format(#dates.createNow(),'yyyy-MM-01')},dataFim=${#dates.format(#dates.createNow(),'yyyy-MM-dd')})}"
+                   class="btn btn--ghost btn--sm" data-tooltip="Exportar Excel">
+                    <i class="ph-duotone ph-file-xls"></i> Excel
+                </a>
+                <!-- Exportar PDF -->
+                <a th:href="@{/relatorios/pdf(dataInicio=${#dates.format(#dates.createNow(),'yyyy-MM-01')},dataFim=${#dates.format(#dates.createNow(),'yyyy-MM-dd')})}"
+                   class="btn btn--ghost btn--sm" data-tooltip="Exportar PDF">
+                    <i class="ph-duotone ph-file-pdf"></i> PDF
+                </a>
+                <a th:href="@{/chamados/novo}" class="btn btn--primary btn--sm">
+                    <i class="ph-bold ph-plus"></i> Novo
+                </a>
+            </div>
+        </div>
+
+        <!-- Tabela -->
+        <div class="data-table-wrap">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th><a th:href="@{/chamados(prestadorId=${filtPrestadorId},status=${filtStatus},setorId=${filtSetorId},motivoId=${filtMotivoId},equipamentoId=${filtEquipamentoId},dataInicio=${filtDataInicio},dataFim=${filtDataFim},conceito=${filtConceito},numeroCh=${filtNumeroCh},sortBy='numeroCh',sortDir=${sortBy=='numeroCh' and sortDir=='asc' ? 'desc' : 'asc'})}" style="color:inherit;text-decoration:none">Nº CH <span class="sort-icon" th:if="${sortBy=='numeroCh'}" th:text="${sortDir=='asc'?'↑':'↓'}"></span></a></th>
+                    <th>Prestador</th>
+                    <th><a th:href="@{/chamados(prestadorId=${filtPrestadorId},status=${filtStatus},setorId=${filtSetorId},motivoId=${filtMotivoId},equipamentoId=${filtEquipamentoId},dataInicio=${filtDataInicio},dataFim=${filtDataFim},conceito=${filtConceito},numeroCh=${filtNumeroCh},sortBy='dataAbertura',sortDir=${sortBy=='dataAbertura' and sortDir=='asc' ? 'desc' : 'asc'})}" style="color:inherit;text-decoration:none">Abertura <span class="sort-icon" th:if="${sortBy=='dataAbertura'}" th:text="${sortDir=='asc'?'↑':'↓'}"></span></a></th>
+                    <th>Fechamento</th>
+                    <th>Equipamento</th>
+                    <th>Setor</th>
+                    <th>Motivo</th>
+                    <th>Status</th>
+                    <th>Conceito</th>
+                    <th>Tempo</th>
+                    <th style="text-align:center">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${chamados.content}">
+                    <td>
+                        <span th:text="${c.numeroCh != null ? c.numeroCh : '#' + c.id}" style="font-family:var(--font-mono);font-size:var(--font-size-xs)">#1</span>
+                        <span th:if="${c.reincidente}" class="badge badge--reincidente" data-tooltip="Reincidente (2+ ocorrências)" style="margin-left:4px">2+</span>
+                    </td>
+                    <td th:text="${c.prestador?.nome}">BRASILINE</td>
+                    <td th:text="${c.dataAbertura != null ? #temporals.format(c.dataAbertura,'dd/MM/yy HH:mm') : '-'}" style="font-family:var(--font-mono);font-size:var(--font-size-xs);white-space:nowrap"></td>
+                    <td th:text="${c.dataFechamento != null ? #temporals.format(c.dataFechamento,'dd/MM/yy HH:mm') : '—'}" style="font-family:var(--font-mono);font-size:var(--font-size-xs);white-space:nowrap"></td>
+                    <td th:text="${c.equipamento?.nome ?: '—'}"></td>
+                    <td th:text="${c.setor?.nome ?: '—'}"></td>
+                    <td th:text="${c.motivo?.descricao ?: '—'}"></td>
+                    <td>
+                        <span th:class="'badge badge--' + ${#strings.toLowerCase(#strings.replace(c.status.name(),'_',''))}"
+                              th:text="${c.status.descricao}">Aberto</span>
+                    </td>
+                    <td>
+                        <span th:if="${c.conceito != null}"
+                              th:class="'conceito conceito--' + ${#strings.toLowerCase(#strings.replace(c.conceito.name(),'_',''))}"
+                              th:text="${c.conceito.descricao}">Bom</span>
+                        <span th:unless="${c.conceito != null}" style="color:var(--color-text-muted)">—</span>
+                    </td>
+                    <td th:text="${c.tempoFormatado()}" style="font-family:var(--font-mono);font-size:var(--font-size-xs)"></td>
+                    <td style="text-align:center;white-space:nowrap">
+                        <a th:href="@{/chamados/{id}(id=${c.id})}" class="btn btn--ghost btn--icon btn--sm" data-tooltip="Detalhes"><i class="ph-bold ph-eye"></i></a>
+                        <a th:href="@{/chamados/{id}/editar(id=${c.id})}" class="btn btn--ghost btn--icon btn--sm" data-tooltip="Editar"><i class="ph-bold ph-pencil"></i></a>
+                        <form sec:authorize="hasRole('ADMIN')" th:action="@{/chamados/{id}/excluir(id=${c.id})}" method="post" style="display:inline" onsubmit="return confirm('Excluir chamado?')">
+                            <button type="submit" class="btn btn--ghost btn--icon btn--sm" data-tooltip="Excluir" style="color:var(--color-danger)"><i class="ph-bold ph-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${chamados.totalElements == 0}">
+                    <td colspan="11">
+                        <div class="empty-state">
+                            <div class="empty-state__icon">🔍</div>
+                            <div class="empty-state__title">Nenhum chamado encontrado</div>
+                            <div class="empty-state__desc">Tente ajustar os filtros ou crie um novo chamado</div>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginação -->
+        <div class="pagination" th:if="${chamados.totalPages > 1}">
+            <div class="pagination__info"
+                 th:text="'Página ' + (${chamados.number}+1) + ' de ' + ${chamados.totalPages}"></div>
+            <div class="pagination__links">
+                <a th:if="${chamados.hasPrevious()}"
+                   th:href="@{/chamados(page=${chamados.number - 1},size=${chamados.size},prestadorId=${filtPrestadorId},status=${filtStatus},setorId=${filtSetorId},motivoId=${filtMotivoId},equipamentoId=${filtEquipamentoId},dataInicio=${filtDataInicio},dataFim=${filtDataFim},conceito=${filtConceito},numeroCh=${filtNumeroCh},sortBy=${sortBy},sortDir=${sortDir})}"
+                   class="pagination__link">◀ Anterior</a>
+                <span th:unless="${chamados.hasPrevious()}" class="pagination__link disabled">◀ Anterior</span>
+
+                <a th:each="i : ${#numbers.sequence(0, chamados.totalPages - 1)}"
+                   th:href="@{/chamados(page=${i},size=${chamados.size},prestadorId=${filtPrestadorId},status=${filtStatus},setorId=${filtSetorId},motivoId=${filtMotivoId},equipamentoId=${filtEquipamentoId},dataInicio=${filtDataInicio},dataFim=${filtDataFim},conceito=${filtConceito},numeroCh=${filtNumeroCh},sortBy=${sortBy},sortDir=${sortDir})}"
+                   class="pagination__link"
+                   th:classappend="${i == chamados.number} ? ' is-active'"
+                   th:text="${i + 1}"
+                   th:if="${chamados.totalPages <= 7 or (i >= chamados.number - 2 and i <= chamados.number + 2)}">1</a>
+
+                <a th:if="${chamados.hasNext()}"
+                   th:href="@{/chamados(page=${chamados.number + 1},size=${chamados.size},prestadorId=${filtPrestadorId},status=${filtStatus},setorId=${filtSetorId},motivoId=${filtMotivoId},equipamentoId=${filtEquipamentoId},dataInicio=${filtDataInicio},dataFim=${filtDataFim},conceito=${filtConceito},numeroCh=${filtNumeroCh},sortBy=${sortBy},sortDir=${sortDir})}"
+                   class="pagination__link">Próxima ▶</a>
+                <span th:unless="${chamados.hasNext()}" class="pagination__link disabled">Próxima ▶</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

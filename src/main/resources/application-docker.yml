@@ -1,0 +1,33 @@
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:controle_servico}
+    username: ${DB_USER:controle_app}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    encoding: UTF-8
+    locations:
+      - classpath:db/migration/postgresql
+      - classpath:db/migration/common
+
+  sql:
+    init:
+      mode: never
+
+  thymeleaf:
+    cache: true

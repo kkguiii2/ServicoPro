@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${pageTitle} + ' · ServiçoPro'">ServiçoPro</title>
+
+    <!-- Fontes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+    <!-- Ícones Phosphor -->
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1/src/index.js"></script>
+
+    <!-- Alpine.js para reatividade leve -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Flatpickr (Data/Hora BR) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+
+    <!-- CSS do sistema -->
+    <link th:href="@{/css/tokens.css}"     rel="stylesheet"/>
+    <link th:href="@{/css/layout.css}"     rel="stylesheet"/>
+    <link th:href="@{/css/components.css}" rel="stylesheet"/>
+    <link th:href="@{/css/animations.css}" rel="stylesheet"/>
+</head>
+<body>
+
+<!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar__brand">
+        <div class="sidebar__logo-icon">⚙</div>
+        <span class="sidebar__brand-name">ServiçoPro</span>
+        <button class="sidebar__toggle" onclick="toggleSidebar()" data-tooltip="Colapsar menu">◀</button>
+    </div>
+
+    <nav class="sidebar__nav">
+        <a th:href="@{/dashboard}"
+           th:class="'sidebar__link' + (${activePage == 'dashboard'} ? ' is-active' : '')">
+            <span class="sidebar__link-icon"><i class="ph-duotone ph-squares-four"></i></span>
+            <span class="sidebar__link-text">Dashboard</span>
+        </a>
+        <a th:href="@{/chamados}"
+           th:class="'sidebar__link' + (${activePage == 'chamados'} ? ' is-active' : '')">
+            <span class="sidebar__link-icon"><i class="ph-duotone ph-ticket"></i></span>
+            <span class="sidebar__link-text">Chamados</span>
+        </a>
+        <a th:href="@{/relatorios}"
+           th:class="'sidebar__link' + (${activePage == 'relatorios'} ? ' is-active' : '')">
+            <span class="sidebar__link-icon"><i class="ph-duotone ph-file-xls"></i></span>
+            <span class="sidebar__link-text">Relatórios</span>
+        </a>
+
+        <div class="sidebar__section-label" sec:authorize="hasRole('ADMIN')">Cadastros</div>
+
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/prestadores}"
+           th:class="'sidebar__link' + (${activePage == 'prestadores'} ? ' is-active' : '')">
+            <span class="sidebar__link-icon"><i class="ph-duotone ph-buildings"></i></span>
+            <span class="sidebar__link-text">Prestadores</span>
+        </a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/equipamentos}"
+           th:class="'sidebar__link' + (${activePage == 'equipamentos'} ? ' is-active' : '')">
+            <span class="sidebar__link-icon"><i class="ph-duotone ph-printer"></i></span>
+            <span class="sidebar__link-text">Equipamentos</span>
+        </a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/configuracoes}"
+           th:class="'sidebar__link' + (${activePage == 'configuracoes'} ? ' is-active' : '')">
+            <span class="sidebar__link-icon"><i class="ph-duotone ph-sliders-horizontal"></i></span>
+            <span class="sidebar__link-text">Configurações</span>
+        </a>
+    </nav>
+
+    <div class="sidebar__footer">
+        <span>ServiçoPro v1.0.0</span>
+    </div>
+</aside>
+
+<!-- ══════════════════════ APP SHELL ══════════════════════ -->
+<div class="app-shell" id="appShell">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <div class="topbar__left">
+            <span class="topbar__page-title" th:text="${pageTitle}">Dashboard</span>
+        </div>
+        <div class="topbar__right">
+            <div class="topbar__clock" id="topbar-clock"></div>
+            <span sec:authentication="name" style="font-size:var(--font-size-sm);color:var(--color-text-muted)"></span>
+            <a th:href="@{/chamados/novo}" class="btn btn--primary btn--sm">
+                <i class="ph-bold ph-plus-circle"></i> Novo Chamado
+            </a>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="btn btn--ghost btn--sm">Sair</button>
+            </form>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="main-content page-enter">
+
+        <!-- Flash Messages -->
+        <div th:if="${successMsg}" class="flash-message flash-message--success">
+            <i class="ph-bold ph-check-circle"></i>
+            <span th:text="${successMsg}"></span>
+        </div>
+        <div th:if="${errorMsg}" class="flash-message flash-message--error">
+            <i class="ph-bold ph-x-circle"></i>
+            <span th:text="${errorMsg}"></span>
+        </div>
+
+        <!-- Conteúdo da página (substituído pelo layout dialect) -->
+        <th:block layout:fragment="content"></th:block>
+    </main>
+</div>
+
+<script>
+function toggleSidebar() {
+    const sidebar  = document.getElementById('sidebar');
+    const shell    = document.getElementById('appShell');
+    const topbar   = document.querySelector('.topbar');
+    const isCollapsed = sidebar.classList.toggle('collapsed');
+    localStorage.setItem('sidebarCollapsed', isCollapsed);
+    const btn = sidebar.querySelector('.sidebar__toggle');
+    btn.textContent = isCollapsed ? '▶' : '◀';
+}
+
+// Restaurar estado do sidebar
+(function() {
+    const saved = localStorage.getItem('sidebarCollapsed');
+    if (saved === 'true') {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.add('collapsed');
+        const btn = sidebar.querySelector('.sidebar__toggle');
+        if (btn) btn.textContent = '▶';
+    }
+})();
+
+// Relógio no topbar
+(function clock() {
+    const el = document.getElementById('topbar-clock');
+    if (!el) return;
+    function tick() {
+        const now = new Date();
+        const hh  = String(now.getHours()).padStart(2, '0');
+        const mm  = String(now.getMinutes()).padStart(2, '0');
+        const ss  = String(now.getSeconds()).padStart(2, '0');
+        const dd  = String(now.getDate()).padStart(2, '0');
+        const mo  = String(now.getMonth() + 1).padStart(2, '0');
+        const yy  = now.getFullYear();
+        el.textContent = `${dd}/${mo}/${yy}  ${hh}:${mm}:${ss}`;
+    }
+    tick();
+    setInterval(tick, 1000);
+})();
+
+// Auto-dismiss flash messages
+document.querySelectorAll('.flash-message').forEach(el => {
+    setTimeout(() => {
+        el.style.transition = 'opacity 0.5s ease';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 500);
+    }, 4000);
+});
+
+// Modais globais: portal no body, foco acessível e bloqueio do scroll da página
+(function setupModals() {
+    // O layout pode ser reprocessado por navegação parcial no futuro. Não registre
+    // um segundo par de listeners se o controlador global já estiver ativo.
+    if (document.documentElement.dataset.modalControllerInitialized === 'true') return;
+    document.documentElement.dataset.modalControllerInitialized = 'true';
+
+    const modals = [...document.querySelectorAll('[data-modal]')];
+    let activeModal = null;
+    let lastTrigger = null;
+
+    const focusableSelector = [
+        'button:not([disabled])',
+        '[href]',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])'
+    ].join(',');
+
+    function openModal(modal, trigger) {
+        if (!modal) return;
+        if (activeModal && activeModal !== modal) closeModal(activeModal, false);
+        activeModal = modal;
+        lastTrigger = trigger || document.activeElement;
+        modal.hidden = false;
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        if (trigger) trigger.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('modal-open');
+
+        requestAnimationFrame(() => {
+            const firstField = modal.querySelector('input:not([disabled]), select:not([disabled]), textarea:not([disabled])');
+            const panel = modal.querySelector('.modal-panel');
+            const focusTarget = firstField || panel;
+            if (focusTarget) focusTarget.focus({ preventScroll: true });
+        });
+    }
+
+    function closeModal(modal, restoreFocus = true) {
+        if (!modal) return;
+        modal.classList.remove('is-open');
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+        const triggerToRestore = lastTrigger;
+        if (triggerToRestore instanceof HTMLElement) {
+            triggerToRestore.setAttribute('aria-expanded', 'false');
+        }
+        activeModal = null;
+        lastTrigger = null;
+        document.body.classList.remove('modal-open');
+        if (restoreFocus && triggerToRestore instanceof HTMLElement) {
+            triggerToRestore.focus({ preventScroll: true });
+        }
+    }
+
+    // Sempre inicia fechado e fora de contêineres animados.
+    modals.forEach(modal => {
+        modal.classList.remove('is-open');
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(modal);
+    });
+
+    document.addEventListener('click', event => {
+        if (!(event.target instanceof Element)) return;
+
+        const openTrigger = event.target.closest('[data-modal-open]');
+        if (openTrigger) {
+            event.preventDefault();
+            openModal(document.getElementById(openTrigger.dataset.modalOpen), openTrigger);
+            return;
+        }
+
+        const closeTrigger = event.target.closest('[data-modal-close]');
+        if (closeTrigger) {
+            event.preventDefault();
+            closeModal(closeTrigger.closest('[data-modal]'));
+            return;
+        }
+
+        if (event.target === activeModal) closeModal(activeModal);
+    });
+
+    document.addEventListener('keydown', event => {
+        if (!activeModal) return;
+
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeModal(activeModal);
+            return;
+        }
+
+        if (event.key !== 'Tab') return;
+        const focusable = [...activeModal.querySelectorAll(focusableSelector)]
+            .filter(element => element.getClientRects().length > 0);
+        if (!focusable.length) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    });
+})();
+</script>
+
+<!-- Scripts específicos de cada página -->
+<th:block layout:fragment="scripts"></th:block>
+
+</body>
+</html>

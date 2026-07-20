@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      lang="pt-BR">
+<body>
+<div layout:fragment="content">
+
+    <div class="section-header">
+        <div>
+            <div class="section-title">Prestadores de Serviço</div>
+            <div class="section-subtitle">Gerenciar empresas prestadoras</div>
+        </div>
+        <button type="button" class="btn btn--primary" data-modal-open="modalNovoPrestador"
+                aria-haspopup="dialog" aria-controls="modalNovoPrestador" aria-expanded="false">
+            <i class="ph-bold ph-plus"></i> Novo Prestador
+        </button>
+    </div>
+
+    <div class="data-table-card">
+        <div class="data-table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nome</th>
+                        <th>Descrição</th>
+                        <th>Status</th>
+                        <th>Cadastrado em</th>
+                        <th style="text-align:center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p : ${prestadores}">
+                        <td th:text="${p.id}" style="font-family:var(--font-mono);font-size:var(--font-size-xs)"></td>
+                        <td>
+                            <span style="font-family:var(--font-display);font-weight:700" th:text="${p.nome}">BRASILINE</span>
+                        </td>
+                        <td th:text="${p.descricao ?: '—'}" style="color:var(--color-text-muted)"></td>
+                        <td>
+                            <span th:if="${p.ativo}" class="badge badge--concluido">Ativo</span>
+                            <span th:unless="${p.ativo}" class="badge badge--cancelado">Inativo</span>
+                        </td>
+                        <td th:text="${p.createdAt != null ? #temporals.format(p.createdAt,'dd/MM/yyyy') : '—'}"
+                            style="font-family:var(--font-mono);font-size:var(--font-size-xs)"></td>
+                        <td style="text-align:center;white-space:nowrap">
+                            <form th:if="${p.ativo}" th:action="@{/prestadores/{id}/desativar(id=${p.id})}" method="post" style="display:inline">
+                                <button type="submit" class="btn btn--ghost btn--sm" data-tooltip="Desativar">⏸</button>
+                            </form>
+                            <form th:unless="${p.ativo}" th:action="@{/prestadores/{id}/ativar(id=${p.id})}" method="post" style="display:inline">
+                                <button type="submit" class="btn btn--ghost btn--sm" data-tooltip="Ativar">▶</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(prestadores)}">
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state__icon">🏢</div>
+                                <div class="empty-state__title">Nenhum prestador</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Novo Prestador -->
+    <div id="modalNovoPrestador" class="modal-backdrop" data-modal hidden
+         role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modalNovoPrestadorTitulo">
+        <div class="modal-panel" tabindex="-1">
+            <div class="modal-panel__header">
+                <div class="modal-panel__heading">
+                    <div class="modal-panel__icon" aria-hidden="true">
+                        <i class="ph-duotone ph-buildings"></i>
+                    </div>
+                    <div>
+                        <div class="modal-panel__title" id="modalNovoPrestadorTitulo">Novo Prestador</div>
+                        <div class="modal-panel__subtitle">Cadastre uma empresa parceira para organizar seus atendimentos.</div>
+                    </div>
+                </div>
+                <button type="button" class="modal-close" data-modal-close aria-label="Fechar modal">
+                    <i class="ph ph-x" aria-hidden="true"></i>
+                </button>
+            </div>
+            <form th:action="@{/prestadores/salvar}" method="post" th:object="${novoPrestador}">
+                <div class="form-group" style="margin-bottom:var(--space-4)">
+                    <label class="form-label" for="nome">Nome <span class="required">*</span></label>
+                    <input type="text" th:field="*{nome}" class="form-control" placeholder="Ex: BRASILINE" autocomplete="organization"/>
+                    <span class="form-error" th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}"></span>
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label" for="descricao">Descrição</label>
+                    <textarea th:field="*{descricao}" class="form-control" rows="2"
+                               placeholder="Tipo de serviço prestado..."></textarea>
+                    <span class="form-error" th:if="${#fields.hasErrors('descricao')}" th:errors="*{descricao}"></span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn--ghost" data-modal-close>Cancelar</button>
+                    <button type="submit" class="btn btn--primary"><i class="ph-bold ph-floppy-disk"></i> Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

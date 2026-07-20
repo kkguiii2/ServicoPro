@@ -1,0 +1,17 @@
+target/
+data/
+backup/
+logs/
+config/
+secrets/
+.env
+*.db
+*.db-shm
+*.db-wal
+*.log
+*.jar
+*.msi
+*.msi.sha256
+.tools/
+.installer/
+dist/

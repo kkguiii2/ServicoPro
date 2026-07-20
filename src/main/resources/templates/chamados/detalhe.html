@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/base}"
+      lang="pt-BR">
+<body>
+<div layout:fragment="content">
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a th:href="@{/chamados}">Chamados</a>
+        <span class="breadcrumb-sep">›</span>
+        <span th:text="'#' + ${chamado.id}">Detalhe</span>
+    </div>
+
+    <!-- Cabeçalho do chamado -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4);margin-bottom:var(--space-5);flex-wrap:wrap">
+        <div>
+            <div style="display:flex;align-items:center;gap:var(--space-4)">
+                <div class="chamado-id" th:text="'Chamado #' + ${chamado.id}">Chamado #1</div>
+                <span th:class="'badge badge--' + ${#strings.toLowerCase(#strings.replace(chamado.status.name(),'_',''))}"
+                      th:text="${chamado.status.descricao}" style="font-size:var(--font-size-sm)">Aberto</span>
+                <span th:if="${chamado.isReincidente()}" class="badge badge--reincidente">
+                    ⚠ Reincidente
+                </span>
+            </div>
+            <div class="chamado-numero" th:if="${chamado.numeroCh != null}"
+                 th:text="'Nº CH: ' + ${chamado.numeroCh}"></div>
+            <div style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-top:var(--space-1)"
+                 th:text="${chamado.prestador?.nome}">BRASILINE</div>
+        </div>
+        <div style="display:flex;gap:var(--space-3)">
+            <a th:href="@{/chamados/{id}/editar(id=${chamado.id})}" class="btn btn--ghost">
+                <i class="ph-bold ph-pencil"></i> Editar
+            </a>
+            <button class="btn btn--primary" onclick="document.getElementById('modalStatus').style.display='flex'">
+                <i class="ph-bold ph-arrow-circle-right"></i> Alterar Status
+            </button>
+            <form sec:authorize="hasRole('ADMIN')" th:action="@{/chamados/{id}/excluir(id=${chamado.id})}" method="post"
+                  onsubmit="return confirm('Excluir este chamado permanentemente?')">
+                <button type="submit" class="btn btn--ghost" style="color:var(--color-danger)">
+                    <i class="ph-bold ph-trash"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Grid de detalhes -->
+    <div class="detail-grid" style="margin-bottom:var(--space-5)">
+
+        <!-- Card: Dados do Chamado -->
+        <div class="detail-card">
+            <div class="detail-card__title">📋 Dados do Chamado</div>
+            <div class="detail-field">
+                <div class="detail-field__label">Prestador</div>
+                <div class="detail-field__value" th:text="${chamado.prestador?.nome ?: '—'}"></div>
+            </div>
+            <div class="detail-field">
+                <div class="detail-field__label">Equipamento</div>
+                <div class="detail-field__value" th:text="${chamado.equipamento?.nome ?: '—'}"></div>
+            </div>
+            <div class="detail-field">
+                <div class="detail-field__label">Setor / Solicitante</div>
+                <div class="detail-field__value" th:text="${chamado.setor?.nome ?: '—'}"></div>
+            </div>
+            <div class="detail-field">
+                <div class="detail-field__label">Motivo</div>
+                <div class="detail-field__value" th:text="${chamado.motivo?.descricao ?: '—'}"></div>
+            </div>
+            <div class="detail-field">
+                <div class="detail-field__label">Ocorrências (mesmo serviço)</div>
+                <div class="detail-field__value" style="font-family:var(--font-mono)"
+                     th:text="${chamado.ocorrenciasMesmoServico ?: 0}"></div>
+            </div>
+        </div>
+
+        <!-- Card: Datas e Tempo -->
+        <div class="detail-card">
+            <div class="detail-card__title">⏱ Datas e Tempo</div>
+            <div class="detail-field">
+                <div class="detail-field__label">Data/Hora de Abertura</div>
+                <div class="detail-field__value detail-field__value--mono"
+                     th:text="${chamado.dataAbertura != null ? #temporals.format(chamado.dataAbertura,'dd/MM/yyyy HH:mm') : '—'}"></div>
+            </div>
+            <div class="detail-field">
+                <div class="detail-field__label">Data/Hora de Fechamento</div>
+                <div class="detail-field__value detail-field__value--mono"
+                     th:text="${chamado.dataFechamento != null ? #temporals.format(chamado.dataFechamento,'dd/MM/yyyy HH:mm') : 'Em aberto'}"></div>
+            </div>
+            <div class="detail-field">
+                <div class="detail-field__label">Tempo de Atendimento</div>
+                <div class="detail-field__value" style="font-family:var(--font-mono);font-size:var(--font-size-xl);font-weight:700;color:var(--color-accent)"
+                     th:text="${chamado.tempoFormatado()}">—</div>
+            </div>
+        </div>
+
+        <!-- Card: Avaliação -->
+        <div class="detail-card">
+            <div class="detail-card__title">⭐ Avaliação</div>
+            <div th:if="${chamado.conceito != null}">
+                <div class="detail-field">
+                    <div class="detail-field__label">Conceito</div>
+                    <div th:class="'conceito conceito--' + ${#strings.toLowerCase(#strings.replace(chamado.conceito.name(),'_',''))}"
+                         style="font-size:var(--font-size-2xl);margin-bottom:var(--space-2)"
+                         th:text="${chamado.conceito.estrelas}"></div>
+                    <div class="detail-field__value"
+                         th:class="'conceito conceito--' + ${#strings.toLowerCase(#strings.replace(chamado.conceito.name(),'_',''))}"
+                         th:text="${chamado.conceito.descricao}">Bom</div>
+                </div>
+            </div>
+            <div th:unless="${chamado.conceito != null}" class="empty-state" style="padding:var(--space-6) 0">
+                <div style="font-size:32px;opacity:0.4">☆</div>
+                <div style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-top:var(--space-2)">Sem avaliação</div>
+            </div>
+
+            <div class="detail-field" th:if="${chamado.observacao}">
+                <div class="detail-field__label">Observação</div>
+                <div class="detail-field__value" style="font-size:var(--font-size-sm);line-height:1.6"
+                     th:text="${chamado.observacao}"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Descrição do Atendimento -->
+    <div class="detail-card" style="margin-bottom:var(--space-5)">
+        <div class="detail-card__title">📝 Descrição do Atendimento</div>
+        <div style="font-size:var(--font-size-base);color:var(--color-text-secondary);line-height:1.7;white-space:pre-wrap"
+             th:text="${chamado.descricaoAtendimento ?: 'Sem descrição'}"></div>
+    </div>
+
+    <!-- Timeline de Histórico -->
+    <div class="detail-card">
+        <div class="detail-card__title">🕐 Histórico de Status</div>
+        <div class="timeline" th:if="${!#lists.isEmpty(historico)}">
+            <div class="timeline-item" th:each="h : ${historico}">
+                <div class="timeline-item__date"
+                     th:text="${#temporals.format(h.alteradoEm,'dd/MM/yyyy HH:mm')}"></div>
+                <div class="timeline-item__content">
+                    <div class="timeline-item__status-change">
+                        <span th:if="${h.statusDe != null}"
+                              th:class="'badge badge--' + ${#strings.toLowerCase(#strings.replace(h.statusDe.name(),'_',''))}"
+                              th:text="${h.statusDe.descricao}">Aberto</span>
+                        <span th:if="${h.statusDe != null}" style="color:var(--color-text-muted)">→</span>
+                        <span th:class="'badge badge--' + ${#strings.toLowerCase(#strings.replace(h.statusPara.name(),'_',''))}"
+                              th:text="${h.statusPara.descricao}">Concluído</span>
+                    </div>
+                    <div class="timeline-item__obs" th:if="${h.observacao}"
+                         th:text="${h.observacao}"></div>
+                </div>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(historico)}" class="empty-state" style="padding:var(--space-6) 0">
+            <div class="empty-state__desc">Sem histórico de alterações</div>
+        </div>
+    </div>
+
+    <!-- Modal: Alterar Status -->
+    <div id="modalStatus" class="modal-backdrop" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+        <div class="modal-panel animate-fadein">
+            <div class="modal-panel__header">
+                <div class="modal-panel__title">Alterar Status</div>
+                <button class="modal-close" onclick="document.getElementById('modalStatus').style.display='none'">✕</button>
+            </div>
+            <form th:action="@{/chamados/{id}/status(id=${chamado.id})}" method="post" th:object="${statusForm}">
+                <div class="form-group" style="margin-bottom:var(--space-4)">
+                    <label class="form-label">Status Atual</label>
+                    <div>
+                        <span th:class="'badge badge--' + ${#strings.toLowerCase(#strings.replace(chamado.status.name(),'_',''))}"
+                              th:text="${chamado.status.descricao}"></span>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:var(--space-4)">
+                    <label class="form-label" for="novoStatus">Novo Status <span class="required">*</span></label>
+                    <select id="novoStatus" th:field="*{novoStatus}" class="form-control"
+                            onchange="toggleDataFechamentoModal(this.value)">
+                        <option th:each="s : ${statusList}"
+                                th:value="${s.name()}"
+                                th:text="${s.descricao}">Aberto</option>
+                    </select>
+                </div>
+                <div class="form-group" id="dataFechamentoModal" style="margin-bottom:var(--space-4);display:none">
+                    <label class="form-label" for="modalDataFechamento">Data/Hora de Fechamento</label>
+                    <input type="datetime-local" id="modalDataFechamento" name="dataFechamento" class="form-control"/>
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label" for="obsModal">Observação <span class="required">*</span></label>
+                    <textarea id="obsModal" th:field="*{observacao}" class="form-control"
+                              rows="3" placeholder="Descreva a razão da alteração..."></textarea>
+                    <span class="form-error" th:if="${#fields.hasErrors('observacao')}" th:errors="*{observacao}"></span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn--ghost"
+                            onclick="document.getElementById('modalStatus').style.display='none'">Cancelar</button>
+                    <button type="submit" class="btn btn--primary">
+                        <i class="ph-bold ph-check"></i> Confirmar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+function toggleDataFechamentoModal(status) {
+    const grupo = document.getElementById('dataFechamentoModal');
+    if (status === 'CONCLUIDO') {
+        grupo.style.display = 'block';
+        const now = new Date();
+        const tzOffset = now.getTimezoneOffset() * 60000;
+        document.getElementById('modalDataFechamento').value = new Date(now - tzOffset).toISOString().slice(0, 16);
+    } else {
+        grupo.style.display = 'none';
+    }
+}
+</script>
+</th:block>
+</body>
+</html>
