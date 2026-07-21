@@ -89,7 +89,7 @@ public class ChamadoService {
         return chamadoRepository.findWithFilters(
             prestadorId, status, setorId, motivoId, equipamentoId,
             dataInicio, dataFim, conceito,
-            numeroCh != null ? numeroCh.trim() : "",
+            (numeroCh != null && !numeroCh.isBlank()) ? "%" + numeroCh.trim().toLowerCase() + "%" : null,
             pageable
         );
     }

@@ -64,7 +64,7 @@ public interface ChamadoRepository extends JpaRepository<Chamado, Long> {
           AND (:dataInicio  IS NULL OR c.dataAbertura >= :dataInicio)
           AND (:dataFim     IS NULL OR c.dataAbertura < :dataFim)
           AND (:conceito    IS NULL OR c.conceito     = :conceito)
-          AND (:numeroCh = '' OR LOWER(c.numeroCh) LIKE LOWER(CONCAT('%', :numeroCh, '%')))
+          AND (:numeroCh IS NULL OR LOWER(c.numeroCh) LIKE :numeroCh)
     """)
     Page<Chamado> findWithFilters(
         @Param("prestadorId")    Long prestadorId,

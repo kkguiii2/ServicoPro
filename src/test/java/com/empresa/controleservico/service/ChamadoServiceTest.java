@@ -150,7 +150,7 @@ class ChamadoServiceTest {
     }
 
     @Test
-    void listarNormalizaNumeroChAusenteComoTextoVazio() {
+    void listarMantemNumeroChAusenteComoNulo() {
         service.listar(
             null, null, null, null, null,
             null, null, null, null,
@@ -170,6 +170,30 @@ class ChamadoServiceTest {
             numeroChCaptor.capture(),
             any(org.springframework.data.domain.Pageable.class)
         );
-        assertThat(numeroChCaptor.getValue()).isEmpty();
+        assertThat(numeroChCaptor.getValue()).isNull();
+    }
+
+    @Test
+    void listarNormalizaNumeroChInformadoComoPadraoDeBusca() {
+        service.listar(
+            null, null, null, null, null,
+            null, null, null, "  CH-42  ",
+            0, 20, "dataAbertura", "desc"
+        );
+
+        ArgumentCaptor<String> numeroChCaptor = ArgumentCaptor.forClass(String.class);
+        verify(chamadoRepository).findWithFilters(
+            nullable(Long.class),
+            nullable(StatusChamado.class),
+            nullable(Long.class),
+            nullable(Long.class),
+            nullable(Long.class),
+            nullable(LocalDateTime.class),
+            nullable(LocalDateTime.class),
+            nullable(com.empresa.controleservico.enums.ConceitoAvaliacao.class),
+            numeroChCaptor.capture(),
+            any(org.springframework.data.domain.Pageable.class)
+        );
+        assertThat(numeroChCaptor.getValue()).isEqualTo("%ch-42%");
     }
 }
