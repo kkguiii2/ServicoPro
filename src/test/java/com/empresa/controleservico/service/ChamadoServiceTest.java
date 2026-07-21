@@ -27,6 +27,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -145,5 +147,29 @@ class ChamadoServiceTest {
 
         assertThat(chamado.getStatus()).isEqualTo(StatusChamado.ABERTO);
         assertThat(chamado.getTempoAtendimentoMinutos()).isEqualTo(60);
+    }
+
+    @Test
+    void listarNormalizaNumeroChAusenteComoTextoVazio() {
+        service.listar(
+            null, null, null, null, null,
+            null, null, null, null,
+            0, 20, "dataAbertura", "desc"
+        );
+
+        ArgumentCaptor<String> numeroChCaptor = ArgumentCaptor.forClass(String.class);
+        verify(chamadoRepository).findWithFilters(
+            nullable(Long.class),
+            nullable(StatusChamado.class),
+            nullable(Long.class),
+            nullable(Long.class),
+            nullable(Long.class),
+            nullable(LocalDateTime.class),
+            nullable(LocalDateTime.class),
+            nullable(com.empresa.controleservico.enums.ConceitoAvaliacao.class),
+            numeroChCaptor.capture(),
+            any(org.springframework.data.domain.Pageable.class)
+        );
+        assertThat(numeroChCaptor.getValue()).isEmpty();
     }
 }
