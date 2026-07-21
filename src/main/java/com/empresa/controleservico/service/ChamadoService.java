@@ -9,6 +9,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -87,14 +88,45 @@ public class ChamadoService {
         );
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        return chamadoRepository.findWithFilters(
-            prestadorId, status, setorId, motivoId, equipamentoId,
-            dataInicio, dataFim, conceito,
-            (numeroCh != null && !numeroCh.isBlank())
-                ? "%" + numeroCh.trim().toLowerCase(Locale.ROOT) + "%"
-                : "",
-            pageable
-        );
+        Specification<Chamado> filtros = Specification.where(null);
+
+        if (prestadorId != null) {
+            filtros = filtros.and((root, query, cb) ->
+                cb.equal(root.get("prestador").get("id"), prestadorId));
+        }
+        if (status != null) {
+            filtros = filtros.and((root, query, cb) -> cb.equal(root.get("status"), status));
+        }
+        if (setorId != null) {
+            filtros = filtros.and((root, query, cb) ->
+                cb.equal(root.get("setor").get("id"), setorId));
+        }
+        if (motivoId != null) {
+            filtros = filtros.and((root, query, cb) ->
+                cb.equal(root.get("motivo").get("id"), motivoId));
+        }
+        if (equipamentoId != null) {
+            filtros = filtros.and((root, query, cb) ->
+                cb.equal(root.get("equipamento").get("id"), equipamentoId));
+        }
+        if (dataInicio != null) {
+            filtros = filtros.and((root, query, cb) ->
+                cb.greaterThanOrEqualTo(root.<LocalDateTime>get("dataAbertura"), dataInicio));
+        }
+        if (dataFim != null) {
+            filtros = filtros.and((root, query, cb) ->
+                cb.lessThan(root.<LocalDateTime>get("dataAbertura"), dataFim));
+        }
+        if (conceito != null) {
+            filtros = filtros.and((root, query, cb) -> cb.equal(root.get("conceito"), conceito));
+        }
+        if (numeroCh != null && !numeroCh.isBlank()) {
+            String padraoNumeroCh = "%" + numeroCh.trim().toLowerCase(Locale.ROOT) + "%";
+            filtros = filtros.and((root, query, cb) ->
+                cb.like(cb.lower(root.get("numeroCh")), padraoNumeroCh));
+        }
+
+        return chamadoRepository.findAll(filtros, pageable);
     }
 
     // ── CRUD ─────────────────────────────────────────────────────────────────

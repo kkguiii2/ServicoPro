@@ -31,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 
 @SpringBootTest
@@ -101,6 +102,19 @@ class ApplicationIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(content().string(containsString("class=\"pagination__link\">◀ Anterior</a>")))
             .andExpect(content().string(containsString("<span class=\"pagination__link disabled\">Próxima ▶</span>")));
+    }
+
+    @Test
+    @WithMockUser(roles = {"USER", "ADMIN"})
+    void filtraChamadosSemEnviarParametrosNulosAoBanco() throws Exception {
+        mockMvc.perform(get("/chamados")
+                .param("numeroCh", "  ch-21  ")
+                .param("dataInicio", "2026-07-01")
+                .param("dataFim", "2026-07-01"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("chamados/lista"))
+            .andExpect(content().string(containsString("CH-21")))
+            .andExpect(content().string(not(containsString("CH-20"))));
     }
 
     @Test

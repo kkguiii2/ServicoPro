@@ -1,11 +1,12 @@
 package com.empresa.controleservico.repository;
 
 import com.empresa.controleservico.entity.Chamado;
-import com.empresa.controleservico.enums.ConceitoAvaliacao;
-import com.empresa.controleservico.enums.StatusChamado;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -17,7 +18,7 @@ import java.util.Optional;
  * Persistência e consultas analíticas de chamados.
  * As consultas de apresentação usam fetch joins para funcionar com Open Session in View desativado.
  */
-public interface ChamadoRepository extends JpaRepository<Chamado, Long> {
+public interface ChamadoRepository extends JpaRepository<Chamado, Long>, JpaSpecificationExecutor<Chamado> {
 
     /**
      * @param id identificador do chamado
@@ -36,48 +37,11 @@ public interface ChamadoRepository extends JpaRepository<Chamado, Long> {
     // ── Paginação com filtros dinâmicos ──────────────────────────────────────
 
     /**
-     * Aplica os filtros opcionais e a paginação recebida.
-     *
-     * @param prestadorId prestador opcional
-     * @param status estado opcional
-     * @param setorId setor opcional
-     * @param motivoId motivo opcional
-     * @param equipamentoId equipamento opcional
-     * @param dataInicio limite inferior inclusivo da abertura
-     * @param dataFim limite superior exclusivo da abertura
-     * @param conceito avaliação opcional
-     * @param numeroCh trecho opcional do número externo
-     * @param pageable paginação e ordenação validadas pelo service
-     * @return página de chamados detalhados
+     * Executa uma especificação dinâmica carregando as associações usadas pela tela.
      */
-    @Query("""
-        SELECT c FROM Chamado c
-        LEFT JOIN FETCH c.prestador
-        LEFT JOIN FETCH c.equipamento
-        LEFT JOIN FETCH c.setor
-        LEFT JOIN FETCH c.motivo
-        WHERE (:prestadorId IS NULL OR c.prestador.id = :prestadorId)
-          AND (:status      IS NULL OR c.status       = :status)
-          AND (:setorId     IS NULL OR c.setor.id     = :setorId)
-          AND (:motivoId    IS NULL OR c.motivo.id    = :motivoId)
-          AND (:equipamentoId IS NULL OR c.equipamento.id = :equipamentoId)
-          AND (:dataInicio  IS NULL OR c.dataAbertura >= :dataInicio)
-          AND (:dataFim     IS NULL OR c.dataAbertura < :dataFim)
-          AND (:conceito    IS NULL OR c.conceito     = :conceito)
-          AND (:numeroCh = '' OR LOWER(c.numeroCh) LIKE :numeroCh)
-    """)
-    Page<Chamado> findWithFilters(
-        @Param("prestadorId")    Long prestadorId,
-        @Param("status")         StatusChamado status,
-        @Param("setorId")        Long setorId,
-        @Param("motivoId")       Long motivoId,
-        @Param("equipamentoId")  Long equipamentoId,
-        @Param("dataInicio")     LocalDateTime dataInicio,
-        @Param("dataFim")        LocalDateTime dataFim,
-        @Param("conceito")       ConceitoAvaliacao conceito,
-        @Param("numeroCh")       String numeroCh,
-        Pageable pageable
-    );
+    @Override
+    @EntityGraph(attributePaths = {"prestador", "equipamento", "setor", "motivo"})
+    Page<Chamado> findAll(Specification<Chamado> specification, Pageable pageable);
 
     // ── Relatórios ───────────────────────────────────────────────────────────
 
