@@ -2,7 +2,7 @@ target/
 data/
 backup/
 logs/
-config/
+/config/
 secrets/
 .env
 *.db
