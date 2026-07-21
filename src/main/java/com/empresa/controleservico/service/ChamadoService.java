@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -89,7 +90,9 @@ public class ChamadoService {
         return chamadoRepository.findWithFilters(
             prestadorId, status, setorId, motivoId, equipamentoId,
             dataInicio, dataFim, conceito,
-            (numeroCh != null && !numeroCh.isBlank()) ? "%" + numeroCh.trim().toLowerCase() + "%" : null,
+            (numeroCh != null && !numeroCh.isBlank())
+                ? "%" + numeroCh.trim().toLowerCase(Locale.ROOT) + "%"
+                : "",
             pageable
         );
     }

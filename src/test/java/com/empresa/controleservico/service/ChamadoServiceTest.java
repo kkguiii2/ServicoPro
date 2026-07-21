@@ -150,7 +150,7 @@ class ChamadoServiceTest {
     }
 
     @Test
-    void listarMantemNumeroChAusenteComoNulo() {
+    void listarNormalizaNumeroChAusenteComoTextoVazio() {
         service.listar(
             null, null, null, null, null,
             null, null, null, null,
@@ -170,7 +170,7 @@ class ChamadoServiceTest {
             numeroChCaptor.capture(),
             any(org.springframework.data.domain.Pageable.class)
         );
-        assertThat(numeroChCaptor.getValue()).isNull();
+        assertThat(numeroChCaptor.getValue()).isEmpty();
     }
 
     @Test
